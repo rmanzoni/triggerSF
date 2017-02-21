@@ -49,7 +49,9 @@ class SFReader():
         Xedges = np.array(Xedges)
         ibin = max(np.where(pt>=Xedges)[0])
         y = Y[ibin-1]
-        if self.interpolate and y!=Y[-1]:
+        # allow interpolation only if it's not for the last bin
+        import pdb ; pdb.set_trace()
+        if self.interpolate and ibin<len(X):
             y = max(min(graph.Eval(pt), 1.), 0.)
         return y    
     
@@ -107,7 +109,7 @@ if __name__ == '__main__':
 
     genuine = False
     
-    for tau in taus:
+    for tau in taus[-1:]:
         data = reader.getDataWeight(tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
         mc = reader.getMCWeight    (tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
         sf = reader.getSF          (tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
