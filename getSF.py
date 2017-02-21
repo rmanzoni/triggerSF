@@ -2,6 +2,9 @@
 import ROOT
 import numpy as np
 
+ROOT.TH1.SetDefaultSumw2()
+ROOT.gStyle.SetOptStat(False)
+
 class SFReader():
     '''
     Class to get trigger SF for lep-tau channels.
@@ -11,7 +14,6 @@ class SFReader():
     def __init__(self, file, interpolate=False):
         self.interpolate = interpolate
         self.file = ROOT.TFile.Open(file, 'read')
-        self.file.cd()
     
     def prepareGraph(self, graph):
         '''
@@ -31,14 +33,13 @@ class SFReader():
             graph = ROOT.TGraph(len(X), X, Y)
         return graph
     
+    
     def getY(self, pt, graph):
         '''
         Get Y given X.
         Can be either binned or linearly etrapolated between bins, depending
         on how the class was istantiated.
         '''
-        if self.interpolate:
-            return max(min(graph.Eval(pt), 1.), 0.)
         npoints = graph.GetN()
         X = np.array([graph.GetX()[i] for i in range(npoints)])
         Y = np.array([graph.GetY()[i] for i in range(npoints)])
@@ -48,6 +49,8 @@ class SFReader():
         Xedges = np.array(Xedges)
         ibin = max(np.where(pt>=Xedges)[0])
         y = Y[ibin-1]
+        if self.interpolate and y!=Y[-1]:
+            y = max(min(graph.Eval(pt), 1.), 0.)
         return y    
     
     def _getWeight(self, isdata, tau_pt, tau_eta, tau_isocut='MediumIso', genuine=True, tau_dm=None):
@@ -64,7 +67,7 @@ class SFReader():
             tojoin = [data, istau, eta, tau_isocut]
             name = '_'.join(tojoin)
             graph = self.file.Get(name)
-        print name
+        #print name
         graph = self.prepareGraph(graph)
         return self.getY(tau_pt, graph)      
     
@@ -81,7 +84,8 @@ class SFReader():
 
 
 if __name__ == '__main__':
-    file = '/afs/cern.ch/work/m/manzoni/public/rereco2016triggerSF/trigger_sf_et.root'
+    file = 'ele-tau/trigger_sf_et.root'
+#     file = 'mu-tau/trigger_sf_mt.root'
     
     reader = SFReader(file, interpolate=False)
 
@@ -104,10 +108,146 @@ if __name__ == '__main__':
     genuine = False
     
     for tau in taus:
-        data = reader.getDataWeight(tau[0], tau[1], tau_isocut='VLoose', genuine=genuine, tau_dm=tau[2])
-        mc = reader.getMCWeight    (tau[0], tau[1], tau_isocut='VLoose', genuine=genuine, tau_dm=tau[2])
-        sf = reader.getSF          (tau[0], tau[1], tau_isocut='VLoose', genuine=genuine, tau_dm=tau[2])
+        data = reader.getDataWeight(tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
+        mc = reader.getMCWeight    (tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
+        sf = reader.getSF          (tau[0], tau[1], tau_isocut='VLooseIso', genuine=genuine, tau_dm=tau[2])
         
         print 'data eff %.4f\t MC eff %.4f\t SF %.4f' %(data, mc, sf)
+
+    import sys
+    sys.exit(0)
+
+    print '========================================'
+    print '==== testing, only in my local area ===='
+    print '========================================\n\n\n'
+
+
+    filenames = [
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/DYJetsToLL_M50_LO_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT1000to1500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT1000to1500_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT100to200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT1500to2000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT2000toInf/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT2000toInf_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT200to300/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT200to300_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT300to500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT300to500_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT500to700/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT500to700_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT700to1000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_HT700to1000_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt120to170/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt15to30/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt170to300/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt170to300_ext/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt50to80/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/QCD_Pt80to120/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WJetsToLNu_LO/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM1000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM1200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM1400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM1600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM1800/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM2000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM2200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM2400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM2600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM2800/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM3000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM3200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM3400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM3600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM3800/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM4000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM4200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM4400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM4600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM4800/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM5000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM5200/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM5400/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM5600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM5800/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/WpTauNuM600/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM1250/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM1500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM1750/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM2000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM2500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM3000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM3500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM4000/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM500/TauTreeProducer/skim.root',
+        '/afs/cern.ch/work/m/manzoni/diTau2015/CMSSW_8_0_25/src/CMGTools/H2TauTau/cfgPython/single_tau/doneMC/ZpTTM750/TauTreeProducer/skim.root',
+    ]
+    
+    t1 = ROOT.TChain('tree')
+    
+    print 'loading trees ...'
+    
+    for i, fname in enumerate(filenames):
+        print '\t%d/%d' %(i+1, len(filenames))
+        if fname.endswith('.url'):
+            with open(fname) as ff:
+                fname = ff.readlines()[0].rstrip()
+        t1.Add(fname)
+    
+    tot = t1.GetEntries()
+    print '... loaded trees, total events:', tot
+
+    bins = np.array([0., 10., 20., 22.5, 25., 27.5, 30., 32.5, 35., 37.5, 40., 42.5, 45., 50., 55., 60., 70., 90., 120., 200., 500., 1000.])
+
+    h_barrel = ROOT.TH2F('tau_leg_et_barrel', 'tau_leg_et_barrel', len(bins)-1, bins, 3, 0, 3)
+    h_endcap = ROOT.TH2F('tau_leg_et_endcap', 'tau_leg_et_endcap', len(bins)-1, bins, 3, 0, 3)
+
+    h_barrel_norm = ROOT.TH2F('tau_leg_et_barrel_norm', 'tau_leg_et_barrel_norm', len(bins)-1, bins, 3, 0, 3)
+    h_endcap_norm = ROOT.TH2F('tau_leg_et_endcap_norm', 'tau_leg_et_endcap_norm', len(bins)-1, bins, 3, 0, 3)
+    
+    for hh in [h_barrel, h_endcap, h_barrel_norm, h_endcap_norm]:
+        hh.GetXaxis().SetTitle('#tau p_{T} [GeV]')
+        hh.GetYaxis().SetTitle('#tau decay mode')
+    
+    
+    for ii, tau in enumerate(t1):
+        if ii%11==0:
+            continue
+#         if ii >= 5000:
+#             break
+        if ii%10000 == 0: print '===> %d/%d' %(ii, tot)
+        # data = reader.getDataWeight(tau.tau_pt, tau.tau_eta, tau_isocut='VLooseIso', genuine=(abs(tau.tau_gen_pdgId) in [11, 13, 15]), tau_dm=tau.tau_decayMode)
+        # mc = reader.getMCWeight    (tau.tau_pt, tau.tau_eta, tau_isocut='VLooseIso', genuine=(abs(tau.tau_gen_pdgId) in [11, 13, 15]), tau_dm=tau.tau_decayMode)
+        sf = reader.getSF          (tau.tau_pt, tau.tau_eta, tau_isocut='VLooseIso', genuine=(abs(tau.tau_gen_pdgId) in [11, 13, 15]), tau_dm=tau.tau_decayMode)
         
+        if abs(tau.tau_eta) < 1.5:
+            h_barrel     .Fill(tau.tau_pt, tau.tau_decayMode*(tau.tau_decayMode<2) + 2*(tau.tau_decayMode==10), sf)
+            h_barrel_norm.Fill(tau.tau_pt, tau.tau_decayMode*(tau.tau_decayMode<2) + 2*(tau.tau_decayMode==10), 1.)
+        else:        
+            h_endcap     .Fill(tau.tau_pt, tau.tau_decayMode*(tau.tau_decayMode<2) + 2*(tau.tau_decayMode==10), sf)
+            h_endcap_norm.Fill(tau.tau_pt, tau.tau_decayMode*(tau.tau_decayMode<2) + 2*(tau.tau_decayMode==10), 1.)
         
+        #print 'data eff %.4f\t MC eff %.4f\t SF %.4f' %(data, mc, sf)
+        
+    h_barrel.Divide(h_barrel_norm)
+    h_endcap.Divide(h_endcap_norm)
+
+
+    h_barrel.Draw('colz')
+    ROOT.gPad.SaveAs('tau_leg_et_barrel.pdf')
+
+    h_endcap.Draw('colz')
+    ROOT.gPad.SaveAs('tau_leg_et_endcap.pdf')
+    
+
+
+
+
+
+
+
+
+
+
+
